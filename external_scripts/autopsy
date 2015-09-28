@@ -1,0 +1,37 @@
+#!/bin/bash
+args=$1
+FILE=$1
+
+CEMETERY=/home/game_server/morgue/cemetery/list
+OUT=/tmp/gitircbot/irc.freenode.net/"##roguenexus"/in
+#OUT=/tmp/gitircbot/irc.freenode.net/"#gohoubi"/in
+
+
+ID=`cat $FILE | tr -d '\000' | grep "In memory of" | awk '{gsub(/%,/,""); print $4}'`
+PROFESSION=`cat $FILE | tr -d '\000' | grep "was a" -m1 | grep -o '[^ ]*[A-Z][^ ]*' | sed -e '/He\|She/d' | tr '\r\n' ' ' | xargs`
+QUOTE=`cat $FILE | tr -d '\000' | grep "\"" -m1 `
+LOCATION=`cat $FILE | tr -d '\000' | grep -m1 "was killed" | sed -e 's/\<He\|She\>//g' | xargs | tr -d '.'`
+#CAUSE=`cat $FILE | tr -d '\000' | grep -A20 -e "Final Messages" | tail -1 | rev | cut -c 2- | rev | xargs|  cut -d' ' --complement -s -f1 `
+TIME=`cat $FILE | tr -d '\000' | grep "died on" | cut -d' ' -f3-11`
+#PROFESSION=`grep "He was a" -m1 $FILE | grep -o '[^ ]*[A-Z][^ ]*' | tr -d "\n" `
+CAUSE=`cat $FILE | tr -d '\000' |  grep -B2 -e "Kills" | head -1 | rev | cut -c 2- | rev | sed -e 's/\<AM\|PM\>//g'  | sed -e 's/^[t \t]*//' | cut -d' ' --complement -s -f1`
+
+if [ "$QUOTE" == "" ]
+	then QUOTE="..." 
+fi
+
+if [ "$CAUSE" == "Messages" ]
+	then CAUSE=""
+fi
+
+if [ "$PROFESSION" == "" ]
+	then PROFESSION="unemployed"
+fi
+
+if ! [ "$ID" == "" ]
+	then
+		echo "CDDA: $ID the $PROFESSION $LOCATION $TIME" >> $OUT
+		echo "$CAUSE $QUOTE --$ID" | col -b >> $OUT
+		echo "$ID the $PROFESSION $LOCATION $TIME" >> $CEMETERY 
+		echo "$CAUSE $QUOTE --$ID" | col -b >> $CEMETERY
+fi
